@@ -6,7 +6,7 @@ using namespace std;
 using namespace colorcode;
 
 // return valid descriptor only if it is a terminal
-inline int get_term_fd()
+static inline int get_term_fd()
 {
     static int fd = -2;
     if (fd == -2)
@@ -14,7 +14,14 @@ inline int get_term_fd()
     return fd;
 }
 
-// apply string directly to terminal
+static color_mode colorMode = color_mode_256; // default for xterm
+static const color_spec* currentSpec = NULL;
+void colorcode::set_color_mode(color_mode mode)
+{
+    colorMode = mode;
+}
+
+// generate color codes
 static string generate(const color_spec& spec)
 {
     string buf;
@@ -26,30 +33,50 @@ static string generate(const color_spec& spec)
     else if (get<2>(spec) == bold_off)
         buf += "\033[22m";
 
+    int f = get<0>(spec), b = get<1>(spec);
+    if (f == COLOR_CURRENT && currentSpec != NULL)
+        f = get<0>(*currentSpec);
+    if (b == COLOR_CURRENT && currentSpec != NULL)
+        b = get<1>(*currentSpec);
+
     // handle foreground command
-    if (get<0>(spec) != COLOR_CURRENT) {
-        if (get<0>(spec) == COLOR_DEFAULT)
+    if (f != COLOR_CURRENT) {
+        if (f == COLOR_DEFAULT)
             buf += "\033[39m"; // reset foreground
         else {
-            ss.str("\033[38;5;");
-            ss << get<0>(spec) << 'm';
+            if (colorMode == color_mode_ANSI) {
+                ss.str("\033[");
+                ss << 30+f << 'm';
+            }
+            else if (colorMode == color_mode_256) {
+                ss.str("\033[38;5;");
+                ss << f << 'm';
+            }
             buf += ss.str();
         }
     }
 
     // handle background command
-    if (get<1>(spec) != COLOR_CURRENT) {
-        if (get<1>(spec) == COLOR_DEFAULT)
+    if (b != COLOR_CURRENT) {
+        if (b == COLOR_DEFAULT)
             buf += "\033[49m"; // reset foreground
         else {
-            ss.str("\033[48;5;");
-            ss << get<1>(spec) << 'm';
+            if (colorMode == color_mode_ANSI) {
+                ss.str("\033[");
+                ss << 40+b << 'm';
+            }
+            else if (colorMode == color_mode_256) {
+                ss.str("\033[48;5;");
+                ss << b << 'm';
+            }
             buf += ss.str();
         }
     }
 
     return buf;
 }
+
+// apply string directly to terminal
 static void apply(int fd,const color_spec& spec)
 {
     // send command to terminal
@@ -72,6 +99,7 @@ color_context::color_context(ostream& stream,const color_spec& spec)
         // push new color spec onto top of stack and then apply it
         stk.push(spec);
         apply(fd,spec);
+        currentSpec = &stk.top();
     }
 }
 color_context::~color_context()
@@ -92,12 +120,15 @@ color_context::~color_context()
             // special case: nothing to reset; the static initializers
             // will clean up our changes later; there could still be
             // changes outstanding caused by the manipulators
-            
+
+            // no color context specified by the library
+            currentSpec = NULL;
         }
         else {
             // restore previous 
             color_spec& last = stk.top();
             apply(fd,last);
+            currentSpec = &last;
         }
     }
 }

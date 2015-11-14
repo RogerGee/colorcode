@@ -7,6 +7,15 @@
 
 namespace colorcode
 {
+    // enumerate color modes: these only apply to some implementations
+    // that support multiple color modes
+    enum color_mode
+    {
+        color_mode_ANSI,
+        color_mode_256
+    };
+    void set_color_mode(color_mode mode);
+
     // enumerate colors: these do not represent the full extent of the
     // colors available; it depends on the terminal
     enum color
@@ -31,6 +40,22 @@ namespace colorcode
         COLOR_WHITE
     };
 
+    // enumerate ANSI colors
+    enum ansi_color
+    {
+        ANSI_CURRENT = -2,
+        ANSI_DEFAULT = -1,
+        ANSI_BLACK,
+        ANSI_RED,
+        ANSI_GREEN,
+        ANSI_YELLOW,
+        ANSI_BLUE,
+        ANSI_MAGENTA,
+        ANSI_CYAN,
+        ANSI_WHITE
+    };
+
+    // enumerate bold mode
     enum bold_mode
     {
         bold_on,
@@ -99,7 +124,7 @@ namespace colorcode
 
     std::ostream& operator<<(std::ostream&,const _color_manip&);
 
-    // initializers
+    // initializer for library
     static class __colorcode_init__
     {
     public:
