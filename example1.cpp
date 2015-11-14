@@ -3,10 +3,11 @@
 using namespace std;
 using namespace colorcode;
 
-const auto BLUE = make_tuple(FORE_BLUE,BACK_DEFAULT,false);
-const auto REDBOLD = make_tuple(FORE_RED,BACK_DEFAULT,true);
-const auto BLUEBOLD = make_tuple(FORE_BLUE,BACK_DEFAULT,true);
-const auto REVERSE = make_tuple(FORE_YELLOW,BACK_BLUE,true);
+const auto BLUE = make_tuple(COLOR_BLUE,COLOR_DEFAULT,bold_off);
+const auto REDBOLD = make_tuple(COLOR_RED,COLOR_DEFAULT,bold_on);
+const auto BLUEBOLD = make_tuple(COLOR_BLUE,COLOR_DEFAULT,bold_on);
+const auto YELLOWBOLD = make_tuple(COLOR_YELLOW,COLOR_DEFAULT,bold_on);
+const auto REVERSE = make_tuple(COLOR_YELLOW,COLOR_BLUE,bold_on);
 
 void do_stuff()
 {
@@ -15,7 +16,7 @@ void do_stuff()
     cout << "Please enter your name: ";
 
     {
-        color_context userCntx(cout,BLUEBOLD);
+        color_context userCntx(cout,YELLOWBOLD);
         cin >> user;
     }
 

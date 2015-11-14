@@ -7,43 +7,40 @@
 
 namespace colorcode
 {
-    // enumerate colors: not all of these colors are supported on
-    // Win32 platforms
+    // enumerate colors: these do not represent the full extent of the
+    // colors available; it depends on the terminal
     enum color
     {
-        color_default,
-        color_black,
-        color_red,
-        color_green,
-        color_yellow,
-        color_blue,
-        color_magenta,
-        color_cyan,
-        color_white
+        COLOR_CURRENT = -2,
+        COLOR_DEFAULT = -1,
+        COLOR_BLACK,
+        COLOR_DARK_RED,
+        COLOR_DARK_GREEN,
+        COLOR_DARK_YELLOW,
+        COLOR_DARK_BLUE,
+        COLOR_DARK_MAGENTA,
+        COLOR_DARK_CYAN,
+        COLOR_GRAY,
+        COLOR_DARK_GRAY,
+        COLOR_RED,
+        COLOR_GREEN,
+        COLOR_YELLOW,
+        COLOR_BLUE,
+        COLOR_MAGENTA,
+        COLOR_CYAN,
+        COLOR_WHITE
     };
 
-    // enumerate color modes: foreground is the text color and
-    // background is the screen color
-    enum color_mode
+    enum bold_mode
     {
-        foreground,
-        background
+        bold_on,
+        bold_off,
+        bold_current
     };
-
-    // define constants for each color setting
-    extern const int FORE_DEFAULT; extern const int BACK_DEFAULT;
-    extern const int FORE_BLACK;   extern const int BACK_BLACK;
-    extern const int FORE_RED;     extern const int BACK_RED;
-    extern const int FORE_GREEN;   extern const int BACK_GREEN;
-    extern const int FORE_YELLOW;  extern const int BACK_YELLOW;
-    extern const int FORE_BLUE;    extern const int BACK_BLUE;
-    extern const int FORE_MAGENTA; extern const int BACK_MAGENTA;
-    extern const int FORE_CYAN;    extern const int BACK_CYAN;
-    extern const int FORE_WHITE;   extern const int BACK_WHITE;
 
     // define 'color_spec'; tuple of foreground color, background
     // color and bold flag
-    typedef std::tuple<int,int,bool> color_spec;
+    typedef std::tuple<int,int,bold_mode> color_spec;
 
     // color_context: defines a new color context that exists for the
     // object's lifetime; it is a good idea to only have one of these
@@ -53,12 +50,64 @@ namespace colorcode
     public:
         color_context(std::ostream& stream,const color_spec& spec);
         ~color_context();
-
-        static constexpr int get_color_code(color clr,color_mode mode);
     private:
         std::ostream& os;
         static std::stack<color_spec> stk;
     };
+
+    // _color_manip: used by the implementation to update color using
+    // stream manipulator-like objects
+    class _color_manip
+    {
+        friend std::ostream& operator<<(std::ostream&,const _color_manip&);
+    protected:
+        _color_manip(const color_spec& clrSpec);
+    private:
+        color_spec spec;
+    };
+
+    class _foreground : public _color_manip
+    {
+    public:
+        _foreground(int clr,bold_mode bold = bold_current);
+    };
+    class _background : public _color_manip
+    {
+    public:
+        _background(int clr);
+    };
+    class _bothground : public _color_manip
+    {
+    public:
+        _bothground(int fore,int back,bold_mode bold = bold_current);
+    };
+
+    // foreground, background and bothground: these are stream
+    // manipulators that really just place terminal codes into the
+    // stream
+    template<typename... Targs>
+    _background back(Targs... args)
+    { return _background(args...); }
+
+    template<typename... Targs>
+    _foreground fore(Targs... args)
+    { return _foreground(args...); }
+
+    template<typename... Targs>
+    _bothground both(Targs... args)
+    { return _bothground(args...); }
+
+    std::ostream& operator<<(std::ostream&,const _color_manip&);
+
+    // initializers
+    static class __colorcode_init__
+    {
+    public:
+        __colorcode_init__();
+        ~__colorcode_init__();
+    private:
+        static int ref;
+    } __colorcode_initializer__;
 }
 
 #endif
