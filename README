@@ -1,0 +1,65 @@
+colorcode
+----------------------------------------------------------------------
+Colorcode is a C++ library that supports terminal color
+encoding. Currently the library supports the following terminals:
+
+    - 256-color/ANSI xterm [colorcode-xterm.cpp]
+
+Colorcode does not rely on 'terminfo' but rather executes the escape
+codes directly for each terminal specification. Note that many
+terminals employ the ANSI color specifications, meaning there is some
+overlap in terminal functionality.
+----------------------------------------------------------------------
+Building
+
+To build, run 'make'. This produces an object file. The 'install' rule
+will generate a static library that contains the object code file
+called libcolorcode.a and install it in /usr/local/lib. It also copies
+the header file to a system location.
+
+To build the examples run make on each example. For example:
+   $ make example1
+
+After installing the library you can compile with colorcode like so:
+    $ g++ program.cpp -lcolorcode
+----------------------------------------------------------------------
+How the library works:
+
+The library first makes sure that standard output refers to a
+terminal. If not, then it produces no special output (i.e. no control
+characters are issued).
+
+The library provides two mechanisms for manipulating console colors:
+    1. color context objects
+    2. color stream manipulators
+
+When the library needs to write control characters to standard output,
+it either writes directly using a system call (in the case of
+color context objects) or it uses the C++ 'cout' output stream (in the
+case of color stream manipulators).
+
+Color context objects change and remember the color context. They are
+C++ objects that define a color change for their lifetime. When their
+destructors are called, they reset the color context to the previous
+settings. They must be passed an 'std::ostream' object so that their
+output is synchronized properly with the changes to the terminal.
+
+Color stream manipulators behave similarly to stream manipulators
+found in the C++ Standard Library. They insert control chars into C++
+output streams. This synchronizes the output up with the terminal
+changes. The following functions act as manipulators
+
+    fore(color[, bold-flag])      // change foreground color and bold
+    back(color)                   // change background color
+    both(color,color[,bold-flag]) // change fore/background and bold
+
+The library provides some color constants (for working in 256-color
+mode and for ANSI color mode). You can switch the color mode using the
+'colorcode::set_color_mode()' function. The set of constants provides
+a COLOR_DEFAULT and COLOR_CURRENT (ANSI_DEFAULT and ANSI_CURRENT). The
+default specifier sets the color back to what the terminal's default
+setting is. The current specifier sets the color back to the library's
+current value (based off the current color context).
+
+See the examples in the repository for how to use.
+----------------------------------------------------------------------
